@@ -1,0 +1,23 @@
+{
+  "name": "onboarding",
+  "version": "1.0.0",
+  "description": "just for onboarding purpose",
+  "scripts": {
+    "start": "node main.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "onboarding": "echo hello world"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xiaoye999/onboarding.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/xiaoye999/onboarding/issues"
+  },
+  "homepage": "https://github.com/xiaoye999/onboarding#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}

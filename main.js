@@ -1,33 +1,47 @@
-process.on('SIGTERM', () => {
-  console.log('SIGTERM signal received');
-});
+(async function () {
+    const express = require('express');
+    const pg = require('pg');
+    const QueryStream = require('pg-query-stream');
+    const JSONStream = require('JSONStream');
+    const app = express();
+    app.use(express.json());
 
-process.on('SIGINT', () => {
-  console.log('SIGINT signal received');
-  process.exit(1);
-});
+    const pool = new pg.Pool({ connectionString: process.env.DB_CONNECTION_URI });
+    await pool.query('CREATE TABLE IF NOT EXISTS "training-requests" (id SERIAL PRIMARY KEY, name varchar(20))');
 
-(async function() {
-  const express = require('express');
-  const pg = require('pg');
-  const app = express();
-  app.use(express.json())
+    app.get('/', async function (req, res) {
+        pool.connect((err, client, release) => {
+            if (err) {
+              return console.error('Error acquiring client', err.stack)
+            }
+            // const query = new QueryStream('SELECT * FROM generate_series(0, $1) num', [1000000]);
+            const query = new QueryStream('SELECT * FROM "training-requests"');
+            const stream = client.query(query);
+            stream.on('end', release);
+            stream.pipe(JSONStream.stringify()).pipe(res);
+        });
+    });
 
-  const pool = new pg.Pool({connectionString: process.env.DB_CONNECTION_URI});
-  await pool.query('CREATE TABLE IF NOT EXISTS "training-requests" (id SERIAL PRIMARY KEY, name varchar(20))');
+    app.post('/', async (request, response) => {
+        await pool.query('INSERT INTO "training-requests" (name) values ($1)', [request.body.name]);
+        response.sendStatus(201);
+    });
 
-  app.get('/', async function (req, res) {
-    const result = await pool.query('SELECT * FROM "training-requests"');
-    setTimeout(() => {
-      res.send(`Request count: ${result.rows.map(JSON.stringify)}`);
+    const server = app.listen(process.env.SERVER_PORT, () => {
+        console.log(`Server started on port ${process.env.SERVER_PORT}`);
+    });
 
-    }, 500);
-  })
+    server.on('connection', function (socket) {
+        console.log("A new connection was made by a client.");
+        socket.setTimeout(5 * 1000);
+    });
 
-  app.post('/', async (request, response) => {
-    const result = pool.query('INSERT INTO "training-requests" (name) values ($1)', [request.body.name]);
-    response.sendStatus(201);
-  })
-
-  app.listen(process.env.SERVER_PORT);
+    process.on('SIGTERM', async () => {
+        console.log('SIGTERM signal received');
+        await pool.end();
+        console.log('Pool ended');
+        server.close(() => {
+            console.log('Server shut down');
+        });
+    });
 }());

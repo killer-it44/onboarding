@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    run: onboarding
+  name: onboarding
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: onboarding
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        run: onboarding
+    spec:
+      imagePullSecrets:
+        - name: some-image-pull-secret
+      containers:
+      - image: registry.ingress.oba.d052927.shoot.canary.k8s-hana.ondemand.com/marco-onboarding
+        name: onboarding
+        resources: {}
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    run: onboarding
+  name: onboarding
+spec:
+  ports:
+  - port: 3000
+    protocol: TCP
+    targetPort: 3000
+  selector:
+    run: onboarding
+  type: LoadBalancer
+status:
+  loadBalancer: {}
+

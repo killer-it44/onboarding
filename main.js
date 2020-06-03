@@ -1,3 +1,9 @@
+const {DB_CONNECTION_URI, SERVER_PORT} = process.env;
+if(DB_CONNECTION_URI === undefined || SERVER_PORT === undefined) {
+    console.error('Necessary environment variables were not set!');
+    process.exit(1);
+}
+
 (async function () {
     const express = require('express');
     const pg = require('pg');
@@ -6,7 +12,7 @@
     const app = express();
     app.use(express.json());
 
-    const pool = new pg.Pool({ connectionString: process.env.DB_CONNECTION_URI });
+    const pool = new pg.Pool({ connectionString: DB_CONNECTION_URI });
     await pool.query('CREATE TABLE IF NOT EXISTS "training-requests" (id SERIAL PRIMARY KEY, name varchar(20))');
 
     app.get('/', async function (req, res) {
@@ -27,8 +33,8 @@
         response.sendStatus(201);
     });
 
-    const server = app.listen(process.env.SERVER_PORT, () => {
-        console.log(`Server started on port ${process.env.SERVER_PORT}`);
+    const server = app.listen(SERVER_PORT, () => {
+        console.log(`Server started on port ${SERVER_PORT}`);
     });
 
     server.on('connection', function (socket) {
